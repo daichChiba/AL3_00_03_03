@@ -26,7 +26,7 @@ void GameScene::Initialize() {
 	input_ = Input::GetInstance();
 	audio_ = Audio::GetInstance();
 
-	player_ = new Player;
+	player_ = new Player;//
 	player_->Initialize(model_, textureHandle_, &viewProjection_);
 }
 
