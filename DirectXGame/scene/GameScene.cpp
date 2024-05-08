@@ -2,19 +2,28 @@
 #include "TextureManager.h"
 #include <cassert>
 
-//インストラクタ
+// インストラクタ
 GameScene::GameScene() {}
-//デストラクタ
+// デストラクタ
 GameScene::~GameScene() {
 	delete model_;
-	//ここからAL3の02_01の22をやる
+	// ここからAL3の02_01の22をやる
 	delete player_;
+
+	delete model3d_;
+
+	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
+		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
+			delete worldTransformBlock;
+		}
+	}
+	worldTransformBlocks_.clear();
 }
 
 void GameScene::Initialize() {
 
-	// ファイル名を指定してテクスチャを読み込む
-	textureHandle_ = TextureManager::Load("chopper.png");
+	//// ファイル名を指定してテクスチャを読み込む
+	// textureHandle_ = TextureManager::Load("chopper.png");
 
 	// 3Dモデルの作成
 	model_ = Model::Create();
@@ -26,11 +35,61 @@ void GameScene::Initialize() {
 	input_ = Input::GetInstance();
 	audio_ = Audio::GetInstance();
 
-	player_ = new Player;//
+	// 3Dモデルデータの生成
+	model3d_ = Model::CreateFromOBJ("cube");
+
+	player_ = new Player; //
 	player_->Initialize(model_, textureHandle_, &viewProjection_);
+
+	// 要素数
+	const uint32_t kNumBlockVirtical = 10;
+	const uint32_t kNumBlockHorizontal = 20;
+
+	// ブロック１個分の横幅
+	const float kBlockWidth = 2.0f;
+	const float kBlockHeight = 2.0f;
+
+	// 要素数を変更する
+	worldTransformBlocks_.resize(kNumBlockVirtical);
+	for (uint32_t i = 0; i < kNumBlockVirtical;++i) {
+		worldTransformBlocks_[i].resize(kNumBlockHorizontal);
+	}
+
+	// キューブの生成
+	for (uint32_t i = 0; i < kNumBlockHorizontal; i++) {
+		for (uint32_t j = 0; j < kNumBlockHorizontal; j++) {
+			worldTransformBlocks_[i][j] = new WorldTransform;
+			worldTransformBlocks_[i][j]->Initialize();
+			worldTransformBlocks_[i][j]->translation_.x = kBlockWidth * i;
+			worldTransformBlocks_[i][j]->translation_.y = kBlockHeight * j;
+		}
+	}
 }
 
-void GameScene::Update() {}
+void GameScene::Update() {
+
+	// ブロックの更新
+	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
+		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
+			// 04/24 02_02の更新から始める
+
+			////平行移動
+			Matrix4x4 result{
+			    1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, 1.0f, 0.0f, 0.0f,
+				0.0f, 0.0f, 1.0f, 0.0f,
+				worldTransformBlock->translation_.x,
+				worldTransformBlock->translation_.y,
+				worldTransformBlock->translation_.z,
+			    1.0f};
+
+			// 平行移動だけ表示
+			worldTransformBlock->matWorld_ = result;
+
+			worldTransformBlock->TransferMatrix();
+		}
+	}
+}
 
 void GameScene::Draw() {
 
@@ -59,7 +118,12 @@ void GameScene::Draw() {
 	/// ここに3Dオブジェクトの描画処理を追加できる
 	/// </summary>
 
-	player_->Draw();
+	// player_->Draw();
+	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
+		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
+			model3d_->Draw(*worldTransformBlock, viewProjection_);
+		}
+	}
 
 	// 3Dオブジェクト描画後処理
 	Model::PostDraw();
