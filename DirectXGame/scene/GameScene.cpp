@@ -18,6 +18,8 @@ GameScene::~GameScene() {
 		}
 	}
 	worldTransformBlocks_.clear();
+
+	delete debugCamera_;
 }
 
 void GameScene::Initialize() {
@@ -54,16 +56,31 @@ void GameScene::Initialize() {
 	for (uint32_t i = 0; i < kNumBlockVirtical;++i) {
 		worldTransformBlocks_[i].resize(kNumBlockHorizontal);
 	}
-
 	// キューブの生成
-	for (uint32_t i = 0; i < kNumBlockHorizontal; i++) {
-		for (uint32_t j = 0; j < kNumBlockHorizontal; j++) {
-			worldTransformBlocks_[i][j] = new WorldTransform;
+	for (uint32_t i = 0; i < kNumBlockVirtical; ++i) {
+		for (uint32_t j = 0; j < kNumBlockHorizontal; ++j) {
+			if ((i+j)%2==0) {
+				continue;
+			}
+			worldTransformBlocks_[i][j] = new WorldTransform();
 			worldTransformBlocks_[i][j]->Initialize();
-			worldTransformBlocks_[i][j]->translation_.x = kBlockWidth * i;
-			worldTransformBlocks_[i][j]->translation_.y = kBlockHeight * j;
+			worldTransformBlocks_[i][j]->translation_.x = kBlockWidth * j;
+			worldTransformBlocks_[i][j]->translation_.y = kBlockHeight * i;
 		}
 	}
+
+	//// キューブの生成
+	//for (uint32_t i = 0; i < kNumBlockHorizontal; i++) {
+	//	for (uint32_t j = 0; j < kNumBlockHorizontal; j++) {
+	//		worldTransformBlocks_[i][j] = new WorldTransform;
+	//		worldTransformBlocks_[i][j]->Initialize();
+	//		worldTransformBlocks_[i][j]->translation_.x = kBlockWidth * i;
+	//		worldTransformBlocks_[i][j]->translation_.y = kBlockHeight * j;
+	//	}
+	//}
+
+	//デバックカメラの生成
+	debugCamera_ = new DebugCamera(1280, 720);
 }
 
 void GameScene::Update() {
@@ -73,6 +90,10 @@ void GameScene::Update() {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
 			// 04/24 02_02の更新から始める
 
+			if (!worldTransformBlock) {
+				continue;
+			}
+
 			////平行移動
 			Matrix4x4 result{
 			    1.0f, 0.0f, 0.0f, 0.0f,
@@ -81,7 +102,7 @@ void GameScene::Update() {
 				worldTransformBlock->translation_.x,
 				worldTransformBlock->translation_.y,
 				worldTransformBlock->translation_.z,
-			    1.0f};
+				1.0f};
 
 			// 平行移動だけ表示
 			worldTransformBlock->matWorld_ = result;
@@ -89,6 +110,26 @@ void GameScene::Update() {
 			worldTransformBlock->TransferMatrix();
 		}
 	}
+
+	//デバックカメラの更新
+	debugCamera_->Update();
+
+	#ifdef DEBUG
+	if (input_->TriggerKey(0) {
+		isDebugCameraActive_ = !isDebugCameraActive_;
+}
+#endif // DEBUG
+	if (isDebugCameraActive_){
+		debugCamera_->Update();
+		//デバックカメラのビュー行列
+		viewProjection_.matView = debugCamera_->GetViewProjection().matView;
+		//デバックカメラのプロジェクション行列
+		viewProjection_.matProjection = debugCamera_->GetViewProjection().matProjection;
+	}else{
+		//ビュープロジェクション行列の更新と転送
+		viewProjection_.UpdateMatrix();
+	}
+
 }
 
 void GameScene::Draw() {
@@ -121,7 +162,10 @@ void GameScene::Draw() {
 	// player_->Draw();
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
-			model3d_->Draw(*worldTransformBlock, viewProjection_);
+			if (!worldTransformBlock) {
+				continue;
+			}
+			model3d_->Draw(*worldTransformBlock, debugCamera_->GetViewProjection());
 		}
 	}
 
