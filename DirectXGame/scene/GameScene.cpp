@@ -20,6 +20,8 @@ GameScene::~GameScene() {
 	}
 	worldTransformBlocks_.clear();
 
+	delete modelSkydome_;
+
 	delete debugCamera_;
 }
 
@@ -32,6 +34,7 @@ void GameScene::Initialize() {
 	model_ = Model::Create();
 
 	// ビュープロジェクション
+	viewProjection_.farZ = 500;
 	viewProjection_.Initialize();
 
 	dxCommon_ = DirectXCommon::GetInstance();
@@ -70,18 +73,12 @@ void GameScene::Initialize() {
 		}
 	}
 
-	//// キューブの生成
-	//for (uint32_t i = 0; i < kNumBlockHorizontal; i++) {
-	//	for (uint32_t j = 0; j < kNumBlockHorizontal; j++) {
-	//		worldTransformBlocks_[i][j] = new WorldTransform;
-	//		worldTransformBlocks_[i][j]->Initialize();
-	//		worldTransformBlocks_[i][j]->translation_.x = kBlockWidth * i;
-	//		worldTransformBlocks_[i][j]->translation_.y = kBlockHeight * j;
-	//	}
-	//}
+	// 3Dモデルの生成(スカイドーム)
+	modelSkydome_ = Model::CreateFromOBJ("skydome", true);
 
 	//デバックカメラの生成
 	debugCamera_ = new DebugCamera(1280, 720);
+	debugCamera_->SetFarZ(500);
 }
 
 void GameScene::Update() {
@@ -148,15 +145,19 @@ void GameScene::Draw() {
 	/// ここに3Dオブジェクトの描画処理を追加できる
 	/// </summary>
 
+
 	// player_->Draw();
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
 			if (!worldTransformBlock) {
 				continue;
 			}
+			modelSkydome_->Draw(*worldTransformBlock, debugCamera_->GetViewProjection());
+
 			model3d_->Draw(*worldTransformBlock, debugCamera_->GetViewProjection());
 		}
 	}
+
 
 	// 3Dオブジェクト描画後処理
 	Model::PostDraw();

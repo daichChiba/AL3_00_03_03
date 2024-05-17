@@ -68,6 +68,9 @@ private: // メンバ変数
 
 	std::vector <std::vector< WorldTransform* >> worldTransformBlocks_;
 
+	//スカイドーム3Dモデル
+	Model* modelSkydome_ = nullptr;
+
 	//デバックカメラ有効
 	bool isDebugCameraActive_ = false;
 
