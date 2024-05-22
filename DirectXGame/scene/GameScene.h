@@ -10,6 +10,7 @@
 #include "Player.h"
 #include <vector>
 #include "DebugCamera.h"
+#include "Skydome.h"
 
 /// <summary>
 /// ゲームシーン
@@ -65,6 +66,9 @@ private: // メンバ変数
 
 	//3Dモデルデータ
 	Model* model3d_ = nullptr;
+
+	//天球の生成
+	Skydome* skydome_ = nullptr;
 
 	std::vector <std::vector< WorldTransform* >> worldTransformBlocks_;
 

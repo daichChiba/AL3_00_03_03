@@ -22,6 +22,8 @@ GameScene::~GameScene() {
 
 	delete modelSkydome_;
 
+	delete skydome_;
+
 	delete debugCamera_;
 }
 
@@ -34,7 +36,7 @@ void GameScene::Initialize() {
 	model_ = Model::Create();
 
 	// ビュープロジェクション
-	viewProjection_.farZ = 500;
+	viewProjection_.farZ = 600;
 	viewProjection_.Initialize();
 
 	dxCommon_ = DirectXCommon::GetInstance();
@@ -43,6 +45,8 @@ void GameScene::Initialize() {
 
 	// 3Dモデルデータの生成
 	model3d_ = Model::CreateFromOBJ("cube");
+
+	skydome_ = new Skydome;
 
 	player_ = new Player; //
 	player_->Initialize(model_, textureHandle_, &viewProjection_);
@@ -74,11 +78,14 @@ void GameScene::Initialize() {
 	}
 
 	// 3Dモデルの生成(スカイドーム)
-	modelSkydome_ = Model::CreateFromOBJ("skydome", true);
+	modelSkydome_ = Model::CreateFromOBJ("SkyDome", true);
+
+	//　天球の生成
+	skydome_->Initialize(modelSkydome_, &viewProjection_);
 
 	//デバックカメラの生成
 	debugCamera_ = new DebugCamera(1280, 720);
-	debugCamera_->SetFarZ(500);
+	debugCamera_->SetFarZ(5000000);
 }
 
 void GameScene::Update() {
@@ -97,6 +104,7 @@ void GameScene::Update() {
 			worldTransformBlock->UpdateMatrix();
 		}
 	}
+	skydome_->Update();
 
 #ifdef _DEBUG
 	if (input_->TriggerKey(DIK_0)) {
@@ -152,7 +160,7 @@ void GameScene::Draw() {
 			if (!worldTransformBlock) {
 				continue;
 			}
-			modelSkydome_->Draw(*worldTransformBlock, debugCamera_->GetViewProjection());
+			skydome_->Draw();
 
 			model3d_->Draw(*worldTransformBlock, debugCamera_->GetViewProjection());
 		}
