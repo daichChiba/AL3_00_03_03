@@ -1,7 +1,7 @@
 #include "GameScene.h"
+#include "MathUtilityForText.h"
 #include "TextureManager.h"
 #include <cassert>
-#include"MathUtilityForText.h"
 
 // インストラクタ
 GameScene::GameScene() {}
@@ -24,7 +24,36 @@ GameScene::~GameScene() {
 
 	delete skydome_;
 
+	delete mapChipField_;
+
 	delete debugCamera_;
+}
+
+void GameScene::GenerateBlocks() {
+	// 要素数
+	uint32_t kNumBlockVirtical = mapChipField_->GetNumBlockVirtical();
+	uint32_t kNumBlockHorizontal = mapChipField_->GetNumBlockHorizontal();
+
+	// ブロック１個分の横幅
+	const float kBlockWidth = 2.0f;
+	const float kBlockHeight = 2.0f;
+
+	// 要素数を変更する
+	worldTransformBlocks_.resize(kNumBlockVirtical);
+	for (uint32_t i = 0; i < kNumBlockVirtical; ++i) {
+		worldTransformBlocks_[i].resize(kNumBlockHorizontal);
+	}
+	// キューブの生成
+	for (uint32_t i = 0; i < kNumBlockVirtical; ++i) {
+		for (uint32_t j = 0; j < kNumBlockHorizontal; ++j) {
+			if (mapChipField_->GetMapChipTypeByIndex(j, i) == MapChipType::kBlock) {
+				worldTransformBlocks_[i][j] = new WorldTransform();
+				worldTransformBlocks_[i][j]->Initialize();
+				worldTransformBlocks_[i][j]->translation_.x = kBlockWidth * j;
+				worldTransformBlocks_[i][j]->translation_.y = kBlockHeight * i;
+			}
+		}
+	}
 }
 
 void GameScene::Initialize() {
@@ -51,39 +80,18 @@ void GameScene::Initialize() {
 	player_ = new Player; //
 	player_->Initialize(model_, textureHandle_, &viewProjection_);
 
-	// 要素数
-	const uint32_t kNumBlockVirtical = 10;
-	const uint32_t kNumBlockHorizontal = 20;
+	mapChipField_ = new MapChipField;
+	mapChipField_->LoadMapChipCsv("Resources/blocks.csv");
 
-	// ブロック１個分の横幅
-	const float kBlockWidth = 2.0f;
-	const float kBlockHeight = 2.0f;
-
-	// 要素数を変更する
-	worldTransformBlocks_.resize(kNumBlockVirtical);
-	for (uint32_t i = 0; i < kNumBlockVirtical;++i) {
-		worldTransformBlocks_[i].resize(kNumBlockHorizontal);
-	}
-	// キューブの生成
-	for (uint32_t i = 0; i < kNumBlockVirtical; ++i) {
-		for (uint32_t j = 0; j < kNumBlockHorizontal; ++j) {
-			if ((i+j)%2==0) {
-				continue;
-			}
-			worldTransformBlocks_[i][j] = new WorldTransform();
-			worldTransformBlocks_[i][j]->Initialize();
-			worldTransformBlocks_[i][j]->translation_.x = kBlockWidth * j;
-			worldTransformBlocks_[i][j]->translation_.y = kBlockHeight * i;
-		}
-	}
+	GenerateBlocks();
 
 	// 3Dモデルの生成(スカイドーム)
 	modelSkydome_ = Model::CreateFromOBJ("SkyDome", true);
 
-	//　天球の生成
+	// 　天球の生成
 	skydome_->Initialize(modelSkydome_, &viewProjection_);
 
-	//デバックカメラの生成
+	// デバックカメラの生成
 	debugCamera_ = new DebugCamera(1280, 720);
 	debugCamera_->SetFarZ(5000000);
 }
@@ -111,20 +119,18 @@ void GameScene::Update() {
 		isDebugCameraActive_ = !isDebugCameraActive_;
 	}
 #endif // DEBUG
-	//カメラの処理
-		if (isDebugCameraActive_) {
-			debugCamera_->Update();
-			// デバックカメラのビュー行列
-			viewProjection_.matView = debugCamera_->GetViewProjection().matView;
-			// デバックカメラのプロジェクション行列
-			viewProjection_.matProjection = debugCamera_->GetViewProjection().matProjection;
-		} else {
-			// ビュープロジェクション行列の更新と転送
-			viewProjection_.UpdateMatrix();
-		}
-
+	   // カメラの処理
+	if (isDebugCameraActive_) {
+		debugCamera_->Update();
+		// デバックカメラのビュー行列
+		viewProjection_.matView = debugCamera_->GetViewProjection().matView;
+		// デバックカメラのプロジェクション行列
+		viewProjection_.matProjection = debugCamera_->GetViewProjection().matProjection;
+	} else {
+		// ビュープロジェクション行列の更新と転送
+		viewProjection_.UpdateMatrix();
+	}
 }
-
 
 void GameScene::Draw() {
 
@@ -153,7 +159,6 @@ void GameScene::Draw() {
 	/// ここに3Dオブジェクトの描画処理を追加できる
 	/// </summary>
 
-
 	// player_->Draw();
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
@@ -165,7 +170,6 @@ void GameScene::Draw() {
 			model3d_->Draw(*worldTransformBlock, debugCamera_->GetViewProjection());
 		}
 	}
-
 
 	// 3Dオブジェクト描画後処理
 	Model::PostDraw();
