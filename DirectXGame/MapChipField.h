@@ -21,10 +21,7 @@ struct MapChipDate {
 	std::vector<std::vector<MapChipType>> date;
 };
 
-std::map<std::string, MapChipType> mapChipTable = {
-    {"0", MapChipType::kBlank},
-    {"1", MapChipType::kBlock}
-};
+
 
 class MapChipField {
 public:
