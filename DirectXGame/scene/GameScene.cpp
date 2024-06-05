@@ -75,10 +75,15 @@ void GameScene::Initialize() {
 	// 3Dモデルデータの生成
 	model3d_ = Model::CreateFromOBJ("cube");
 
+	//　3Dplayerモデルデータの作成
+	modelPlayer_ = Model::CreateFromOBJ("player");
+
 	skydome_ = new Skydome;
 
 	player_ = new Player; //
-	player_->Initialize(model_, textureHandle_, &viewProjection_);
+	// 座標をマップチップ番号で指定
+	Vector3 playerPosition = mapChipField_->GetMapChipPositionByIndex(3, 3);
+	player_->Initialize(modelPlayer_, &viewProjection_,playerPosition);
 
 	mapChipField_ = new MapChipField;
 	mapChipField_->LoadMapChipCsv("Resources/blocks.csv");
@@ -92,13 +97,13 @@ void GameScene::Initialize() {
 	skydome_->Initialize(modelSkydome_, &viewProjection_);
 
 	// デバックカメラの生成
-	debugCamera_ = new DebugCamera(1280, 720);
+	debugCamera_ = new DebugCamera(640, 360);
 	debugCamera_->SetFarZ(5000000);
 }
 
 void GameScene::Update() {
-	// 自キャラの更新
-	// player_->Update();
+	 //自キャラの更新
+	 player_->Update();
 
 	// ブロックの更新
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
@@ -159,14 +164,14 @@ void GameScene::Draw() {
 	/// ここに3Dオブジェクトの描画処理を追加できる
 	/// </summary>
 
-	// player_->Draw();
+
 	for (std::vector<WorldTransform*>& worldTransformBlockLine : worldTransformBlocks_) {
 		for (WorldTransform* worldTransformBlock : worldTransformBlockLine) {
 			if (!worldTransformBlock) {
 				continue;
 			}
 			skydome_->Draw();
-
+			player_->Draw();
 			model3d_->Draw(*worldTransformBlock, debugCamera_->GetViewProjection());
 		}
 	}

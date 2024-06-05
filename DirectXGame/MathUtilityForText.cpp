@@ -17,3 +17,11 @@ Matrix4x4 MekeAffineMatrix(const Vector3& scale, const Vector3& rot, const Vecto
 		1.0f};
 	return result;	
 }
+
+//Vector3の足算
+Vector3& operator+=(Vector3& lhv, const Vector3& rhv) {
+	lhv.x +=rhv.x;
+	lhv.y +=rhv.y;
+	lhv.z +=rhv.z;
+	return lhv;
+}

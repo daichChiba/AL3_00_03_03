@@ -67,6 +67,9 @@ private: // メンバ変数
 	//自キャラ
 	Player* player_ = nullptr;
 
+	//playerモデル
+	Model* modelPlayer_ = nullptr;
+
 	//3Dモデルデータ
 	Model* model3d_ = nullptr;
 
